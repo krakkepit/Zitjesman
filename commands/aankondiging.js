@@ -4,7 +4,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('aankondiging')
-		.setDescription('Laat Zitjesman iets verkondigen in het announcements kanaal')
+		.setDescription('Laat Zitjesman iets verkondigen. Standaard in het aankondigingen kanaal.')
         .addStringOption(option => option.setName('tekst').setDescription('Wat Zitjesman moet zeggen').setRequired(true))
         .addChannelOption(option => option.setName('kanaal').setDescription('Welk kanaal je het in wilt (standaard aankondigingen)')),
 
