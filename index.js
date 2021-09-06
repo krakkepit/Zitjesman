@@ -42,43 +42,47 @@ client.on('interactionCreate', async interaction => {
 });
 
 async function handleButton(i) {
-	console.log('Button click found')
-	const userName = i.user.nickname || i.user.username;
-	const isPresent = i.customId === 'beb';
-	const emoji = isPresent ? ':white_check_mark:' : ':no_entry:';
+	try {	
+		console.log('Button click found')
+		const userName = i.user.nickname || i.user.username;
+		const isPresent = i.customId === 'beb';
+		const emoji = isPresent ? ':white_check_mark:' : ':no_entry:';
 
-	const embedFromMessage = i.message.embeds[0];
-	
-	const names = embedFromMessage.fields.find(x => x.name === 'Namen').value.split('\n');
-	const isComingArray = embedFromMessage.fields.find(x => x.name === 'Komt wel/niet').value.split('\n');
+		const embedFromMessage = i.message.embeds[0];
+		
+		const names = embedFromMessage.fields.find(x => x.name === 'Namen').value.split('\n');
+		const isComingArray = embedFromMessage.fields.find(x => x.name === 'Komt wel/niet').value.split('\n');
 
-	if (names.includes(userName)) {
-		const index = names.indexOf(userName);
-		isComingArray[index] = emoji; 
+		if (names.includes(userName)) {
+			const index = names.indexOf(userName);
+			isComingArray[index] = emoji; 
+		}
+		else {
+			names.push(userName);
+			isComingArray.push(emoji);
+		}
+
+		embedFromMessage.fields = [
+			{ name: 'Namen', value: names.join('\n'), inline: true },
+			{ name: 'Komt wel/niet', value: isComingArray.join('\n'), inline: true },
+		];
+
+		//Update the message
+		await i.message.edit({ content: i.message.content, embeds: [embedFromMessage] });
+		const op = i.message.content.split(' ')[0].substring(2);
+		const opmember = i.member.guild.members.cache.find(x => x.nickname === op || x.user.username === op);
+		
+		//Send a message to the Original Poster
+		const opmessage = `**${userName}** heeft gereageerd op je feestje. Hij/zij komt ${isPresent ? 'lekker genieten op je feest! :white_check_mark:': 'helaas niet. :no_entry:'}\n*Aantal deelnemers:* ${isComingArray.filter(x => x === ':white_check_mark:').length}\n\n*Originele Uitnodiging:* ${i.message.content.split('Uitnodiging:** ')[1]}`;
+		await opmember.send(opmessage);
+
+		//Thank the button presser for pressing the button (privately)
+		return await i.reply({ content: 'Bedankt voor het reageren!', ephemeral: true });
 	}
-	else {
-		names = { ...names, userName };
-		isComingArray = { ...isComingArray, emoji };
+	catch (error) {
+		console.log('Something went wrong when handling a button press: ', error);
+		return await i.reply({ content: 'Er is helaas iets misgegaan tijdens het behandelen van je stem. Probeer het later opnieuw.', ephemeral: true });
 	}
-
-	embedFromMessage.fields = [
-		{ name: 'Namen', value: names.join('\n'), inline: true },
-		{ name: 'Komt wel/niet', value: isComingArray.join('\n'), inline: true },
-	];
-
-	//Update the message
-	await i.message.edit({ content: i.message.content, embeds: [embedFromMessage] });
-	const op = i.message.content.split(' ')[0].substring(2);
-	const opmember = i.member.guild.members.cache.find(x => x.nickname === op || x.user.username === op);
-	
-	//Send a message to the Original Poster
-	const membersNotReactedYet = i.member.guild.members.cache.filter(x => !x.user.bot && !(names.includes(x.nickname)) && !(names.includes(x.user.username))).map(x => x.nickname || x.user.username);
-	console.log(membersNotReactedYet)
-	const opmessage = `**${userName}** heeft gereageerd op je feestje. Hij/zij komt ${isPresent ? 'lekker genieten op je feest! :white_check_mark:': 'helaas niet. :no_entry:'}\n*Aantal deelnemers:* ${isComingArray.filter(x => x === ':white_check_mark:').length}\n${membersNotReactedYet.length > 0 ? `*Mensen die nog niet hebben gereageerd:* ${membersNotReactedYet.join(', ')}` : 'Iedereen heeft gereageerd!'}\n\n*Originele Uitnodiging:* ${i.message.content.split('Uitnodiging:** ')[1]}`;
-	await opmember.send(opmessage);
-
-	//Thank the button presser for pressing the button (privately)
-	return await i.reply({ content: 'Bedankt voor het reageren!', ephemeral: true });
 }
 
 client.login(token);
